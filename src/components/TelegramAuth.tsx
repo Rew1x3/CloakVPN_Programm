@@ -406,7 +406,24 @@ const TelegramAuth = () => {
                   telegramId = authData.user?.telegram_id
                 }
                 
-                // Если есть telegram_id, проверяем через API
+                // Если нет telegram_id, просим пользователя ввести его
+                if (!telegramId) {
+                  const userInput = prompt('Введите ваш Telegram ID (число). Вы можете найти его в боте @userinfobot или после авторизации в боте.')
+                  if (userInput) {
+                    telegramId = parseInt(userInput.trim())
+                    if (isNaN(telegramId)) {
+                      setError('Неверный формат Telegram ID. Должно быть число.')
+                      setIsLoading(false)
+                      return
+                    }
+                  } else {
+                    setError('Telegram ID не введен.')
+                    setIsLoading(false)
+                    return
+                  }
+                }
+                
+                // Проверяем через API
                 if (telegramId) {
                   console.log('Checking auth via API with telegram_id:', telegramId)
                   const API_URL = import.meta.env.VITE_API_URL || 'https://cloak-vpn.vercel.app'
@@ -451,10 +468,8 @@ const TelegramAuth = () => {
                       }
                     }
                   } else {
-                    setError('Авторизация не найдена. Пожалуйста, авторизуйтесь в боте и попробуйте снова.')
+                    setError(result.error || 'Авторизация не найдена. Убедитесь, что вы авторизовались в боте в течение последних 5 минут.')
                   }
-                } else {
-                  setError('Не удалось найти данные авторизации. Пожалуйста, авторизуйтесь в боте.')
                 }
               } catch (e: any) {
                 console.error('Error checking auth:', e)
