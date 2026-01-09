@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { openTelegramAuth } from '../lib/telegramAuth'
+import { databaseService } from '../services/database'
 import './TelegramAuth.css'
 
 // Для Electron приложения используем IPC для связи с Telegram
@@ -61,6 +62,19 @@ const TelegramAuth = () => {
           setError('Ошибка обработки данных авторизации')
         }
       })
+    }
+
+    // Слушаем событие deep link из preload
+    const handleDeepLinkEvent = (event: CustomEvent) => {
+      const authData = event.detail
+      if (authData.user && authData.session) {
+        handleAuthFromDeepLink(authData)
+      }
+    }
+    window.addEventListener('cloakvpn-auth', handleDeepLinkEvent as EventListener)
+    
+    return () => {
+      window.removeEventListener('cloakvpn-auth', handleDeepLinkEvent as EventListener)
     }
 
     // Проверяем, есть ли данные авторизации после возврата из браузера
@@ -170,9 +184,14 @@ const TelegramAuth = () => {
 
       // Проверяем, есть ли доступ к Electron API
       if (window.electron?.openExternal) {
-        // В Electron приложении открываем бота с командой /start_app
-        await openTelegramAuth()
-        setInfo('Откройте Telegram бота (@cloakv_bot) в браузере, нажмите кнопку "✅ Войти" и затем "🚀 Открыть CloakVPN". После авторизации вернитесь в приложение - авторизация произойдет автоматически.')
+        // В Electron приложении открываем Telegram бота для авторизации
+        const botUsername = import.meta.env.VITE_TELEGRAM_BOT_USERNAME || 'cloakv_bot'
+        const botUrl = `https://t.me/${botUsername}?start=app_auth`
+        await window.electron.openExternal(botUrl)
+        
+        setInfo('Откройте Telegram бота (@cloakv_bot) в браузере, нажмите кнопку "✅ Войти" и затем "🚀 Открыть CloakVPN". После авторизации вернитесь в приложение и нажмите кнопку "Проверить авторизацию" ниже.')
+        
+        // Добавляем кнопку для проверки авторизации
         setIsLoading(false)
         return
       } else if (window.Telegram?.WebApp?.initDataUnsafe?.user) {
@@ -257,6 +276,81 @@ const TelegramAuth = () => {
         >
           {isLoading ? 'Авторизация...' : 'Войти через Telegram'}
         </button>
+
+        {info && window.electron?.openExternal && (
+          <button
+            onClick={async () => {
+              setIsLoading(true)
+              setError('')
+              try {
+                // Проверяем данные авторизации
+                const authDataStr = localStorage.getItem('cloakvpn_app_auth')
+                if (authDataStr) {
+                  const authData = JSON.parse(authDataStr)
+                  
+                  if (authData.user && authData.session) {
+                    // Используем session для авторизации в Supabase
+                    if (authData.session.access_token) {
+                      const { supabase } = await import('../lib/supabase')
+                      const { data, error } = await supabase.auth.setSession({
+                        access_token: authData.session.access_token,
+                        refresh_token: authData.session.refresh_token || '',
+                      })
+                      
+                      if (!error && data.user) {
+                        const result = await databaseService.getCurrentUser()
+                        if (result.success && result.user) {
+                          const mappedUser = {
+                            id: result.user.id.toString(),
+                            email: result.user.email || '',
+                            name: result.user.name || 'User',
+                            subscription: {
+                              plan: (result.user.subscription_plan || 'free') as 'free' | 'premium' | 'yearly' | 'family',
+                              expiresAt: result.user.subscription_expires_at || null,
+                              isActive: result.user.subscription_is_active !== false,
+                            },
+                            createdAt: result.user.created_at || new Date().toISOString(),
+                          }
+                          localStorage.setItem('cloakvpn_user', JSON.stringify(mappedUser))
+                          localStorage.removeItem('cloakvpn_app_auth')
+                          window.location.href = '/'
+                          return
+                        }
+                      }
+                    }
+                    
+                    // Fallback: используем данные напрямую
+                    if (authData.user.telegram_id) {
+                      const telegramUser = {
+                        id: authData.user.telegram_id,
+                        first_name: authData.user.name?.split(' ')[0] || 'User',
+                        last_name: authData.user.name?.split(' ').slice(1).join(' ') || '',
+                        username: authData.user.telegram_username,
+                      }
+                      await loginWithTelegram(telegramUser)
+                      localStorage.removeItem('cloakvpn_app_auth')
+                      navigate('/')
+                    }
+                  } else {
+                    setError('Данные авторизации не найдены. Пожалуйста, авторизуйтесь на сайте.')
+                  }
+                } else {
+                  setError('Данные авторизации не найдены. Пожалуйста, авторизуйтесь на сайте и нажмите кнопку "🚀 Открыть CloakVPN" в боте.')
+                }
+              } catch (e: any) {
+                setError(e.message || 'Ошибка проверки авторизации')
+                console.error('Error checking auth:', e)
+              } finally {
+                setIsLoading(false)
+              }
+            }}
+            disabled={isLoading}
+            className="telegram-button"
+            style={{ marginTop: '10px', background: '#4CAF50' }}
+          >
+            {isLoading ? 'Проверка...' : 'Проверить авторизацию'}
+          </button>
+        )}
 
         <div className="auth-footer">
           <p>

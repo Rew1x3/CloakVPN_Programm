@@ -1,6 +1,6 @@
 // Утилита для авторизации через Telegram в Electron приложении
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://your-site.vercel.app'
+const API_URL = import.meta.env.VITE_API_URL || 'https://cloak-vpn.vercel.app'
 
 export interface TelegramUser {
   id: number
@@ -16,7 +16,7 @@ export interface TelegramUser {
  */
 export async function openTelegramAuth(): Promise<void> {
   const botUsername = import.meta.env.VITE_TELEGRAM_BOT_USERNAME || 'cloakv_bot'
-  const API_URL = import.meta.env.VITE_API_URL || 'https://your-site.vercel.app'
+  const API_URL = import.meta.env.VITE_API_URL || 'https://cloak-vpn.vercel.app'
   
   // Открываем бота с командой /start_app для авторизации в приложении
   const botUrl = `https://t.me/${botUsername}?start=app_auth`

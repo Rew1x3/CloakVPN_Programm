@@ -109,6 +109,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     checkSession()
 
     // Слушаем изменения состояния аутентификации
+    let authSubscription: { unsubscribe: () => void } | null = null
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('AuthContext: Auth state changed:', event, session?.user?.id)
       
@@ -125,9 +126,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         localStorage.removeItem('cloakvpn_telegram_id')
       }
     })
+    authSubscription = subscription
 
     return () => {
-      subscription.data.subscription?.unsubscribe()
+      if (authSubscription) {
+        authSubscription.unsubscribe()
+      }
     }
   }, [])
 

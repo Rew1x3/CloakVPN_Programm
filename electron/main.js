@@ -186,6 +186,53 @@ ipcMain.handle('open-external', async (_, url) => {
   await shell.openExternal(url)
 })
 
+// Обработка deep link для авторизации (cloakvpn://auth?data=...)
+// Регистрируем протокол ДО app.whenReady()
+app.setAsDefaultProtocolClient('cloakvpn')
+
+// Функция для обработки deep link
+function handleDeepLink(url) {
+  try {
+    const urlObj = new URL(url)
+    if (urlObj.protocol === 'cloakvpn:' && urlObj.pathname === '//auth') {
+      const data = urlObj.searchParams.get('data')
+      if (data && mainWindow) {
+        // Отправляем данные в renderer процесс
+        mainWindow.webContents.send('deep-link-auth', decodeURIComponent(data))
+      }
+    }
+  } catch (error) {
+    console.error('Error handling deep link:', error)
+  }
+}
+
+// Обработка deep link при запуске приложения
+const gotTheLock = app.requestSingleInstanceLock()
+
+if (!gotTheLock) {
+  app.quit()
+} else {
+  app.on('second-instance', (event, commandLine, workingDirectory) => {
+    // Обрабатываем deep link из второго экземпляра
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore()
+      mainWindow.focus()
+      
+      // Парсим deep link
+      const url = commandLine.find(arg => arg.startsWith('cloakvpn://'))
+      if (url) {
+        handleDeepLink(url)
+      }
+    }
+  })
+}
+
+// Обработка deep link при открытии приложения через протокол (macOS)
+app.on('open-url', (event, url) => {
+  event.preventDefault()
+  handleDeepLink(url)
+})
+
 app.whenReady().then(async () => {
   // Инициализируем БД при запуске
   try {
@@ -202,7 +249,16 @@ app.whenReady().then(async () => {
       createWindow()
     }
   })
+
+  // Проверяем deep link из аргументов при запуске (Windows/Linux)
+  if (process.platform === 'win32' || process.platform === 'linux') {
+    const url = process.argv.find(arg => arg.startsWith('cloakvpn://'))
+    if (url) {
+      setTimeout(() => handleDeepLink(url), 1000) // Даем время окну загрузиться
+    }
+  }
 })
+
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
