@@ -1,0 +1,120 @@
+.telegram-user-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+  padding: 20px;
+  background: var(--bg-tertiary);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+}
+
+.telegram-avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  border: 2px solid var(--primary);
+}
+
+.telegram-user-details {
+  text-align: center;
+}
+
+.telegram-user-name {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.telegram-username {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.telegram-auth-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 20px;
+}
+
+.telegram-auth-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 40px;
+  max-width: 400px;
+  width: 100%;
+  text-align: center;
+  box-shadow: var(--shadow-lg);
+}
+
+.telegram-icon {
+  font-size: 64px;
+  margin-bottom: 24px;
+}
+
+.telegram-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 12px;
+}
+
+.telegram-description {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 24px;
+  line-height: 1.6;
+}
+
+.telegram-button {
+  width: 100%;
+  padding: 14px 32px;
+  background: linear-gradient(135deg, #0088cc, #0066aa);
+  border: none;
+  border-radius: 12px;
+  color: white;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: var(--shadow-md);
+  margin-top: 8px;
+}
+
+.telegram-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-glow);
+  background: linear-gradient(135deg, #0099dd, #0088cc);
+}
+
+.telegram-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.telegram-error {
+  padding: 12px 16px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid var(--error);
+  border-radius: 12px;
+  color: var(--error);
+  font-size: 13px;
+  margin-bottom: 20px;
+}
+
+.telegram-info {
+  padding: 12px 16px;
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid var(--success);
+  border-radius: 12px;
+  color: var(--success);
+  font-size: 13px;
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+

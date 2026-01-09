@@ -1,0 +1,350 @@
+.home-page {
+  width: 100%;
+  height: 100%;
+  padding: 48px;
+  overflow-y: auto;
+  position: relative;
+}
+
+.home-background {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.bg-gradient-1,
+.bg-gradient-2 {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(120px);
+  opacity: 0.15;
+  animation: float 25s ease-in-out infinite;
+}
+
+.bg-gradient-1 {
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, var(--primary), transparent);
+  top: -200px;
+  left: -200px;
+  animation-delay: 0s;
+}
+
+.bg-gradient-2 {
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, var(--accent), transparent);
+  bottom: -200px;
+  right: -200px;
+  animation-delay: -12s;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(50px, -50px) scale(1.1);
+  }
+}
+
+.home-content {
+  position: relative;
+  z-index: 1;
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.home-header {
+  text-align: center;
+  margin-bottom: 48px;
+}
+
+.page-title {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+  letter-spacing: -0.5px;
+}
+
+.page-subtitle {
+  font-size: 15px;
+  color: var(--text-secondary);
+  font-weight: 400;
+}
+
+.connection-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 48px;
+  margin-bottom: 32px;
+  box-shadow: var(--shadow-lg);
+}
+
+.status-section {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 40px;
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 16px;
+  border-radius: 20px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.status-badge.connected {
+  background: rgba(16, 185, 129, 0.1);
+  border-color: var(--success);
+  color: var(--success);
+}
+
+.status-badge.disconnected {
+  color: var(--text-tertiary);
+}
+
+.status-indicator-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.connection-visual {
+  display: flex;
+  justify-content: center;
+  margin: 48px 0;
+}
+
+.connection-circle {
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  background: var(--bg-tertiary);
+  border: 2px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  transition: all 0.4s ease;
+}
+
+.connection-circle.active {
+  border-color: var(--primary);
+  box-shadow: 0 0 40px rgba(147, 51, 234, 0.3);
+  background: linear-gradient(135deg, rgba(147, 51, 234, 0.1), rgba(236, 72, 153, 0.1));
+}
+
+.circle-inner {
+  color: var(--text-secondary);
+  z-index: 2;
+  transition: color 0.3s ease;
+}
+
+.connection-circle.active .circle-inner {
+  color: var(--primary);
+}
+
+.connection-rings {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100%;
+  height: 100%;
+}
+
+.ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border: 2px solid var(--primary);
+  border-radius: 50%;
+  opacity: 0;
+}
+
+.ring-1 {
+  width: 180px;
+  height: 180px;
+  animation: ringPulse 2s ease-out infinite;
+}
+
+.ring-2 {
+  width: 220px;
+  height: 220px;
+  animation: ringPulse 2s ease-out infinite 0.3s;
+}
+
+.ring-3 {
+  width: 260px;
+  height: 260px;
+  animation: ringPulse 2s ease-out infinite 0.6s;
+}
+
+@keyframes ringPulse {
+  0% {
+    transform: translate(-50%, -50%) scale(0.9);
+    opacity: 0.6;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1.3);
+    opacity: 0;
+  }
+}
+
+.connect-button {
+  width: 100%;
+  padding: 16px 32px;
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  border: none;
+  border-radius: 12px;
+  color: white;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: var(--shadow-md);
+  margin-bottom: 24px;
+  letter-spacing: 0.3px;
+}
+
+.connect-button:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-glow-strong);
+  background: linear-gradient(135deg, var(--primary-light), var(--primary));
+}
+
+.connect-button.connected {
+  background: linear-gradient(135deg, var(--error), #DC2626);
+}
+
+.connect-button.connected:hover {
+  background: linear-gradient(135deg, #DC2626, #B91C1C);
+}
+
+.server-preview {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background: var(--bg-tertiary);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+}
+
+.server-preview-flag {
+  font-size: 32px;
+}
+
+.server-preview-info {
+  flex: 1;
+}
+
+.server-preview-country {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.server-preview-city {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.stats-section {
+  margin-top: 32px;
+}
+
+.stats-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 20px;
+  letter-spacing: -0.3px;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 16px;
+}
+
+.stat-item {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  transition: all 0.2s ease;
+}
+
+.stat-item:hover {
+  border-color: var(--border-hover);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.stat-content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.stat-label {
+  font-size: 11px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 500;
+}
+
+.stat-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--primary);
+  letter-spacing: -0.5px;
+}
+
+.quick-tip {
+  text-align: center;
+  padding: 20px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+@media (max-width: 768px) {
+  .home-page {
+    padding: 24px;
+  }
+
+  .connection-card {
+    padding: 32px;
+  }
+
+  .connection-circle {
+    width: 150px;
+    height: 150px;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+}
