@@ -45,6 +45,8 @@ const TelegramAuth = () => {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
   const [info, setInfo] = useState('')
+  const [showTelegramIdInput, setShowTelegramIdInput] = useState(false)
+  const [telegramIdInput, setTelegramIdInput] = useState('')
   const { loginWithTelegram } = useAuth()
   const navigate = useNavigate()
 
@@ -406,21 +408,12 @@ const TelegramAuth = () => {
                   telegramId = authData.user?.telegram_id
                 }
                 
-                // Если нет telegram_id, просим пользователя ввести его
+                // Если нет telegram_id, показываем форму для ввода
                 if (!telegramId) {
-                  const userInput = prompt('Введите ваш Telegram ID (число). Вы можете найти его в боте @userinfobot или после авторизации в боте.')
-                  if (userInput) {
-                    telegramId = parseInt(userInput.trim())
-                    if (isNaN(telegramId)) {
-                      setError('Неверный формат Telegram ID. Должно быть число.')
-                      setIsLoading(false)
-                      return
-                    }
-                  } else {
-                    setError('Telegram ID не введен.')
-                    setIsLoading(false)
-                    return
-                  }
+                  setShowTelegramIdInput(true)
+                  setIsLoading(false)
+                  setInfo('Введите ваш Telegram ID. Вы можете найти его в боте @userinfobot или после авторизации в боте.')
+                  return
                 }
                 
                 // Проверяем через API
