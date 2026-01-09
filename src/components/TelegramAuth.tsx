@@ -269,9 +269,10 @@ const TelegramAuth = () => {
         const botUrl = `https://t.me/${botUsername}?start=app_auth`
         await window.electron.openExternal(botUrl)
         
-        setInfo('1. Откройте Telegram бота (@cloakv_bot)\n2. Нажмите кнопку "✅ Войти"\n3. После авторизации нажмите кнопку "Проверить авторизацию" ниже')
+        setInfo('1. Откройте Telegram бота (@cloakv_bot)\n2. Нажмите кнопку "✅ Войти"\n3. Скопируйте код авторизации из бота\n4. Введите код ниже')
         
-        // Добавляем кнопку для проверки авторизации
+        // Показываем форму ввода кода сразу
+        setShowAuthCodeInput(true)
         setIsLoading(false)
         return
       } else if (window.Telegram?.WebApp?.initDataUnsafe?.user) {
@@ -439,7 +440,7 @@ const TelegramAuth = () => {
                         }
                       }
                     } else {
-                      setError(result.error || 'Неверный код или код устарел. Убедитесь, что вы ввели код из бота и авторизовались в течение последних 5 минут.')
+                      setError(result.error || 'Неверный код или код устарел. Убедитесь, что вы ввели код из бота и авторизовались в течение последних 10 минут.')
                     }
                   } catch (e: any) {
                     console.error('Error checking auth:', e)
