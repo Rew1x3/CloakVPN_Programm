@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain } from 'electron'
+import { app, BrowserWindow, ipcMain, shell } from 'electron'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import { initDatabase, db } from './database.js'
@@ -32,15 +32,9 @@ function createWindow() {
     mainWindow.webContents.openDevTools()
   } else {
     const indexPath = join(__dirname, '../dist/index.html')
-    console.log('Loading index.html from:', indexPath)
     mainWindow.loadFile(indexPath).catch((err) => {
       console.error('Error loading index.html:', err)
     })
-  }
-
-  // Открываем DevTools в production для отладки (можно убрать позже)
-  if (!isDev) {
-    mainWindow.webContents.openDevTools()
   }
 
   mainWindow.on('closed', () => {
@@ -181,6 +175,10 @@ ipcMain.handle('window-maximize', () => {
 
 ipcMain.handle('window-close', () => {
   if (mainWindow) mainWindow.close()
+})
+
+ipcMain.handle('open-external', async (_, url) => {
+  await shell.openExternal(url)
 })
 
 app.whenReady().then(async () => {
