@@ -48,6 +48,88 @@ const TelegramAuth = () => {
   const { loginWithTelegram } = useAuth()
   const navigate = useNavigate()
 
+  // Функция для обработки deep link авторизации
+  const handleAuthFromDeepLink = async (authData: any) => {
+    setIsLoading(true)
+    setError('')
+    setInfo('')
+
+    try {
+      console.log('handleAuthFromDeepLink: received authData', authData)
+      
+      // Сначала устанавливаем сессию Supabase, если есть токены
+      if (authData.session?.access_token) {
+        console.log('Setting Supabase session...')
+        const { supabase } = await import('../lib/supabase')
+        const { data, error } = await supabase.auth.setSession({
+          access_token: authData.session.access_token,
+          refresh_token: authData.session.refresh_token || '',
+        })
+        
+        if (error) {
+          console.error('Error setting Supabase session:', error)
+          throw new Error('Ошибка установки сессии: ' + error.message)
+        }
+        
+        if (data.user) {
+          console.log('Supabase session set successfully, user:', data.user.id)
+          
+          // Получаем профиль пользователя из Supabase
+          const result = await databaseService.getCurrentUser()
+          if (result.success && result.user) {
+            console.log('User profile loaded:', result.user)
+            // Преобразуем данные из БД в формат User
+            const mappedUser = {
+              id: result.user.id.toString(),
+              email: result.user.email || '',
+              name: result.user.name || 'User',
+              subscription: {
+                plan: (result.user.subscription_plan || 'free') as 'free' | 'premium' | 'yearly' | 'family',
+                expiresAt: result.user.subscription_expires_at || null,
+                isActive: result.user.subscription_is_active !== false,
+              },
+              createdAt: result.user.created_at || new Date().toISOString(),
+            }
+            
+            // Сохраняем пользователя в localStorage
+            localStorage.setItem('cloakvpn_user', JSON.stringify(mappedUser))
+            console.log('User saved to localStorage')
+            
+            // Ждем немного, чтобы сессия точно установилась
+            await new Promise(resolve => setTimeout(resolve, 500))
+            
+            // Перезагружаем страницу для обновления AuthContext
+            // Это гарантирует, что AuthContext увидит сессию Supabase
+            window.location.href = '/'
+            return
+          } else {
+            console.error('Failed to get user profile:', result.error)
+            throw new Error('Не удалось получить профиль пользователя')
+          }
+        }
+      }
+      
+      // Fallback: если нет токенов, используем старый метод через loginWithTelegram
+      if (authData.user.telegram_id) {
+        console.log('Fallback: using loginWithTelegram')
+        const telegramUser = {
+          id: authData.user.telegram_id,
+          first_name: authData.user.name?.split(' ')[0] || 'User',
+          last_name: authData.user.name?.split(' ').slice(1).join(' ') || '',
+          username: authData.user.telegram_username,
+        }
+        await loginWithTelegram(telegramUser)
+        navigate('/')
+      } else {
+        throw new Error('Не удалось получить данные пользователя')
+      }
+    } catch (err: any) {
+      console.error('Deep link auth error:', err)
+      setError(err.message || 'Ошибка авторизации через deep link')
+      setIsLoading(false)
+    }
+  }
+
   useEffect(() => {
     // Обработка deep link для авторизации из бота
     if (window.electron?.onDeepLinkAuth) {
@@ -82,44 +164,11 @@ const TelegramAuth = () => {
       try {
         const authDataStr = localStorage.getItem('cloakvpn_app_auth')
         if (authDataStr) {
+          console.log('Found auth data in localStorage, processing...')
           const authData = JSON.parse(authDataStr)
           if (authData.user && authData.session) {
-            // Авторизуем пользователя с полученными данными
-            const user = {
-              id: authData.user.id,
-              email: authData.user.email || `telegram_${authData.user.telegram_id}@cloakvpn.local`,
-              name: authData.user.name,
-              subscription: {
-                plan: authData.user.subscription_plan || 'free',
-                expiresAt: authData.user.subscription_expires_at,
-                isActive: authData.user.subscription_is_active || true,
-              },
-              createdAt: authData.user.created_at || new Date().toISOString(),
-            }
-            // Используем loginWithTelegram для установки пользователя
-            // Но сначала нужно получить данные Telegram пользователя
-            // Для этого используем данные из authData
-            if (authData.user.telegram_id) {
-              const telegramUser = {
-                id: authData.user.telegram_id,
-                first_name: authData.user.name?.split(' ')[0] || 'User',
-                last_name: authData.user.name?.split(' ').slice(1).join(' ') || '',
-                username: authData.user.telegram_username,
-              }
-              try {
-                await loginWithTelegram(telegramUser)
-                localStorage.removeItem('cloakvpn_app_auth')
-                navigate('/')
-              } catch (err) {
-                console.error('Failed to login with auth data:', err)
-                localStorage.removeItem('cloakvpn_app_auth')
-              }
-            } else {
-              // Если нет telegram_id, просто устанавливаем пользователя
-              localStorage.setItem('cloakvpn_user', JSON.stringify(user))
-              localStorage.removeItem('cloakvpn_app_auth')
-              navigate('/')
-            }
+            await handleAuthFromDeepLink(authData)
+            localStorage.removeItem('cloakvpn_app_auth')
             return
           }
         }
@@ -147,32 +196,6 @@ const TelegramAuth = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
-
-  const handleAuthFromDeepLink = async (authData: any) => {
-    setIsLoading(true)
-    setError('')
-    setInfo('')
-
-    try {
-      if (authData.user.telegram_id) {
-        const telegramUser = {
-          id: authData.user.telegram_id,
-          first_name: authData.user.name?.split(' ')[0] || 'User',
-          last_name: authData.user.name?.split(' ').slice(1).join(' ') || '',
-          username: authData.user.telegram_username,
-        }
-        await loginWithTelegram(telegramUser)
-        navigate('/')
-      } else {
-        throw new Error('Не удалось получить данные пользователя')
-      }
-    } catch (err: any) {
-      setError(err.message || 'Ошибка авторизации через deep link')
-      console.error('Deep link auth error:', err)
-    } finally {
-      setIsLoading(false)
-    }
-  }
 
   const handleTelegramAuth = async () => {
     setIsLoading(true)
