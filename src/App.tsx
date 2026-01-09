@@ -85,6 +85,14 @@ function App() {
         <Router>
           <Routes>
             <Route
+              path="/telegram"
+              element={
+                <PublicRoute>
+                  <Telegram />
+                </PublicRoute>
+              }
+            />
+            <Route
               path="/login"
               element={
                 <PublicRoute>
@@ -97,14 +105,6 @@ function App() {
               element={
                 <PublicRoute>
                   <Register />
-                </PublicRoute>
-              }
-            />
-            <Route
-              path="/telegram"
-              element={
-                <PublicRoute>
-                  <Telegram />
                 </PublicRoute>
               }
             />

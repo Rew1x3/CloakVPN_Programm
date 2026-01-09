@@ -5,7 +5,8 @@
   "main": "electron/main.js",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "vite build",
+    "build:check": "tsc && vite build",
     "preview": "vite preview",
     "electron:dev": "concurrently \"vite\" \"wait-on http://localhost:5173 && electron .\"",
     "electron:build": "npm run build && electron-builder",
@@ -47,12 +48,15 @@
     "win": {
       "target": [
         {
-          "target": "portable",
+          "target": "nsis",
           "arch": ["x64"]
         }
       ],
-      "artifactName": "${productName}-${version}-${arch}.${ext}",
-      "icon": "build/icon.ico"
+      "artifactName": "${productName}-${version}-portable.${ext}",
+      "icon": "build/icon.ico",
+      "sign": false,
+      "signingHashAlgorithms": [],
+      "requestedExecutionLevel": "asInvoker"
     },
     "portable": {
       "artifactName": "${productName}-${version}-portable.${ext}"

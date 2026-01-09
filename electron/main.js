@@ -31,7 +31,16 @@ function createWindow() {
     mainWindow.loadURL('http://localhost:5173')
     mainWindow.webContents.openDevTools()
   } else {
-    mainWindow.loadFile(join(__dirname, '../dist/index.html'))
+    const indexPath = join(__dirname, '../dist/index.html')
+    console.log('Loading index.html from:', indexPath)
+    mainWindow.loadFile(indexPath).catch((err) => {
+      console.error('Error loading index.html:', err)
+    })
+  }
+
+  // Открываем DevTools в production для отладки (можно убрать позже)
+  if (!isDev) {
+    mainWindow.webContents.openDevTools()
   }
 
   mainWindow.on('closed', () => {
