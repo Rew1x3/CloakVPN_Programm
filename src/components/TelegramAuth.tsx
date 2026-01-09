@@ -397,7 +397,9 @@ const TelegramAuth = () => {
                   setInfo('Проверяю авторизацию...')
                   
                   try {
-                    console.log('Checking auth via API with auth_code:', authCode)
+                    // Очищаем код от пробелов и лишних символов
+                    const cleanCode = authCode.trim().replace(/\s/g, '')
+                    console.log('Checking auth via API with auth_code:', cleanCode, '(original:', authCode, ')')
                     const API_URL = import.meta.env.VITE_API_URL || 'https://cloak-vpn.vercel.app'
                     const response = await fetch(`${API_URL}/api/telegram/check-auth`, {
                       method: 'POST',
@@ -405,7 +407,7 @@ const TelegramAuth = () => {
                         'Content-Type': 'application/json',
                       },
                       body: JSON.stringify({
-                        auth_code: authCode,
+                        auth_code: cleanCode,
                       }),
                     })
                     
