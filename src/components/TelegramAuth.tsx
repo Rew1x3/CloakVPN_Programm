@@ -360,64 +360,105 @@ const TelegramAuth = () => {
             onClick={async () => {
               setIsLoading(true)
               setError('')
+              setInfo('Проверяю авторизацию...')
+              
               try {
-                // Проверяем данные авторизации
+                console.log('Checking authentication via API...')
+                
+                // Сначала проверяем localStorage
                 const authDataStr = localStorage.getItem('cloakvpn_app_auth')
+                let telegramId = null
+                
                 if (authDataStr) {
+                  console.log('Found auth data in localStorage')
                   const authData = JSON.parse(authDataStr)
                   
-                  if (authData.user && authData.session) {
-                    // Используем session для авторизации в Supabase
-                    if (authData.session.access_token) {
-                      const { supabase } = await import('../lib/supabase')
-                      const { data, error } = await supabase.auth.setSession({
-                        access_token: authData.session.access_token,
-                        refresh_token: authData.session.refresh_token || '',
-                      })
-                      
-                      if (!error && data.user) {
-                        const result = await databaseService.getCurrentUser()
-                        if (result.success && result.user) {
-                          const mappedUser = {
-                            id: result.user.id.toString(),
-                            email: result.user.email || '',
-                            name: result.user.name || 'User',
-                            subscription: {
-                              plan: (result.user.subscription_plan || 'free') as 'free' | 'premium' | 'yearly' | 'family',
-                              expiresAt: result.user.subscription_expires_at || null,
-                              isActive: result.user.subscription_is_active !== false,
-                            },
-                            createdAt: result.user.created_at || new Date().toISOString(),
-                          }
-                          localStorage.setItem('cloakvpn_user', JSON.stringify(mappedUser))
-                          localStorage.removeItem('cloakvpn_app_auth')
-                          window.location.href = '/'
-                          return
+                  if (authData.user && authData.session?.access_token) {
+                    console.log('Using localStorage auth data')
+                    const { supabase } = await import('../lib/supabase')
+                    const { data, error } = await supabase.auth.setSession({
+                      access_token: authData.session.access_token,
+                      refresh_token: authData.session.refresh_token || '',
+                    })
+                    
+                    if (!error && data.user) {
+                      const result = await databaseService.getCurrentUser()
+                      if (result.success && result.user) {
+                        const mappedUser = {
+                          id: result.user.id.toString(),
+                          email: result.user.email || '',
+                          name: result.user.name || 'User',
+                          subscription: {
+                            plan: (result.user.subscription_plan || 'free') as 'free' | 'premium' | 'yearly' | 'family',
+                            expiresAt: result.user.subscription_expires_at || null,
+                            isActive: result.user.subscription_is_active !== false,
+                          },
+                          createdAt: result.user.created_at || new Date().toISOString(),
                         }
+                        localStorage.setItem('cloakvpn_user', JSON.stringify(mappedUser))
+                        localStorage.removeItem('cloakvpn_app_auth')
+                        window.location.href = '/'
+                        return
                       }
                     }
+                  }
+                  
+                  telegramId = authData.user?.telegram_id
+                }
+                
+                // Если есть telegram_id, проверяем через API
+                if (telegramId) {
+                  console.log('Checking auth via API with telegram_id:', telegramId)
+                  const API_URL = import.meta.env.VITE_API_URL || 'https://cloak-vpn.vercel.app'
+                  const response = await fetch(`${API_URL}/api/telegram/check-auth`, {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                      telegram_id: telegramId,
+                    }),
+                  })
+                  
+                  const result = await response.json()
+                  console.log('API check result:', result)
+                  
+                  if (result.success && result.authenticated && result.session?.access_token) {
+                    const { supabase } = await import('../lib/supabase')
+                    const { data, error } = await supabase.auth.setSession({
+                      access_token: result.session.access_token,
+                      refresh_token: result.session.refresh_token || '',
+                    })
                     
-                    // Fallback: используем данные напрямую
-                    if (authData.user.telegram_id) {
-                      const telegramUser = {
-                        id: authData.user.telegram_id,
-                        first_name: authData.user.name?.split(' ')[0] || 'User',
-                        last_name: authData.user.name?.split(' ').slice(1).join(' ') || '',
-                        username: authData.user.telegram_username,
+                    if (!error && data.user) {
+                      const userResult = await databaseService.getCurrentUser()
+                      if (userResult.success && userResult.user) {
+                        const mappedUser = {
+                          id: userResult.user.id.toString(),
+                          email: userResult.user.email || '',
+                          name: userResult.user.name || 'User',
+                          subscription: {
+                            plan: (userResult.user.subscription_plan || 'free') as 'free' | 'premium' | 'yearly' | 'family',
+                            expiresAt: userResult.user.subscription_expires_at || null,
+                            isActive: userResult.user.subscription_is_active !== false,
+                          },
+                          createdAt: userResult.user.created_at || new Date().toISOString(),
+                        }
+                        localStorage.setItem('cloakvpn_user', JSON.stringify(mappedUser))
+                        localStorage.removeItem('cloakvpn_app_auth')
+                        window.location.href = '/'
+                        return
                       }
-                      await loginWithTelegram(telegramUser)
-                      localStorage.removeItem('cloakvpn_app_auth')
-                      navigate('/')
                     }
                   } else {
-                    setError('Данные авторизации не найдены. Пожалуйста, авторизуйтесь на сайте.')
+                    setError('Авторизация не найдена. Пожалуйста, авторизуйтесь в боте и попробуйте снова.')
                   }
                 } else {
-                  setError('Данные авторизации не найдены. Пожалуйста, авторизуйтесь на сайте и нажмите кнопку "🚀 Открыть CloakVPN" в боте.')
+                  setError('Не удалось найти данные авторизации. Пожалуйста, авторизуйтесь в боте.')
                 }
               } catch (e: any) {
-                setError(e.message || 'Ошибка проверки авторизации')
                 console.error('Error checking auth:', e)
+                setError(e.message || 'Ошибка проверки авторизации')
               } finally {
                 setIsLoading(false)
               }
@@ -426,7 +467,7 @@ const TelegramAuth = () => {
             className="telegram-button"
             style={{ marginTop: '10px', background: '#4CAF50' }}
           >
-            {isLoading ? 'Проверка...' : 'Проверить авторизацию'}
+            {isLoading ? 'Проверка...' : '✅ Проверить авторизацию'}
           </button>
         )}
 
