@@ -164,32 +164,54 @@ const TelegramAuth = () => {
   }
 
   useEffect(() => {
+    console.log('TelegramAuth: Setting up deep link listeners')
+    
     // Обработка deep link для авторизации из бота
     if (window.electron?.onDeepLinkAuth) {
+      console.log('TelegramAuth: Setting up onDeepLinkAuth callback')
       window.electron.onDeepLinkAuth((data: string) => {
+        console.log('TelegramAuth: onDeepLinkAuth callback called, data length:', data?.length)
         try {
-          const authData = JSON.parse(decodeURIComponent(data))
+          const decodedData = decodeURIComponent(data)
+          console.log('TelegramAuth: Decoded data:', decodedData.substring(0, 100) + '...')
+          const authData = JSON.parse(decodedData)
+          console.log('TelegramAuth: Parsed authData:', {
+            hasUser: !!authData.user,
+            hasSession: !!authData.session,
+            userId: authData.user?.id
+          })
           if (authData.user && authData.session) {
+            console.log('TelegramAuth: Calling handleAuthFromDeepLink')
             handleAuthFromDeepLink(authData)
+          } else {
+            console.warn('TelegramAuth: Missing user or session in authData')
           }
         } catch (e) {
-          console.error('Failed to parse deep link auth data:', e)
+          console.error('TelegramAuth: Failed to parse deep link auth data:', e)
           setError('Ошибка обработки данных авторизации')
         }
       })
+    } else {
+      console.log('TelegramAuth: window.electron.onDeepLinkAuth not available')
     }
 
     // Слушаем событие deep link из preload
     const handleDeepLinkEvent = (event: CustomEvent) => {
+      console.log('TelegramAuth: Received cloakvpn-auth event', event.detail)
       const authData = event.detail
-      if (authData.user && authData.session) {
+      if (authData?.user && authData?.session) {
+        console.log('TelegramAuth: Calling handleAuthFromDeepLink from event')
         handleAuthFromDeepLink(authData)
+      } else {
+        console.warn('TelegramAuth: Missing user or session in event detail')
       }
     }
     window.addEventListener('cloakvpn-auth', handleDeepLinkEvent as EventListener)
+    console.log('TelegramAuth: Added cloakvpn-auth event listener')
     
     return () => {
       window.removeEventListener('cloakvpn-auth', handleDeepLinkEvent as EventListener)
+      console.log('TelegramAuth: Removed cloakvpn-auth event listener')
     }
 
     // Проверяем, есть ли данные авторизации после возврата из браузера
