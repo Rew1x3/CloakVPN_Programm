@@ -6,14 +6,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   maximize: () => ipcRenderer.invoke('window-maximize'),
   close: () => ipcRenderer.invoke('window-close'),
   
-  // Database API
-  db: {
-    login: (credentials) => ipcRenderer.invoke('db-login', credentials),
-    register: (data) => ipcRenderer.invoke('db-register', data),
-    telegramAuth: (telegramData) => ipcRenderer.invoke('db-telegram-auth', telegramData),
-    updateUser: (userId, userData) => ipcRenderer.invoke('db-update-user', { userId, userData }),
-    getUser: (userId) => ipcRenderer.invoke('db-get-user', userId),
-  },
+  // Примечание: Работа с базой данных теперь выполняется через Supabase клиент в renderer процессе
 })
 
 // Также экспортируем как electron для совместимости

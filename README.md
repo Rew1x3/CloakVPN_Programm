@@ -132,7 +132,7 @@ CloakVPN/
 ├── electron/               # Electron файлы
 │   ├── main.js             # Главный процесс Electron
 │   ├── preload.js          # Preload скрипт для безопасности
-│   └── database.js         # Работа с БД на стороне Electron
+│   └── preload.js          # Preload скрипт для Electron
 ├── build/                  # Иконки для сборки
 │   ├── icon.ico            # Иконка Windows
 │   ├── icon.icns           # Иконка macOS
