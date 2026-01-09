@@ -103,14 +103,42 @@ const Referral = () => {
       // Генерируем уникальный код (8 символов)
       const code = Math.random().toString(36).substring(2, 10).toUpperCase()
       
-      const { error } = await supabase
-        .from('profiles')
-        .update({ referral_code: code })
-        .eq('id', user.id)
-
-      if (error) {
-        console.error('Error generating referral code:', error)
-        return
+      // Пробуем сохранить в referrals, если не получится - в profiles
+      let saved = false
+      
+      try {
+        const { error: referralsError } = await supabase
+          .from('referrals')
+          .upsert({
+            user_id: user.id,
+            referral_code: code,
+          }, {
+            onConflict: 'user_id'
+          })
+        
+        if (!referralsError) {
+          saved = true
+        }
+      } catch (e) {
+        // Таблица referrals не существует
+      }
+      
+      if (!saved) {
+        // Пробуем сохранить в profiles
+        try {
+          const { error: profilesError } = await supabase
+            .from('profiles')
+            .update({ referral_code: code })
+            .eq('id', user.id)
+          
+          if (profilesError) {
+            console.error('Error generating referral code:', profilesError)
+            return
+          }
+        } catch (e) {
+          console.error('Error saving referral code:', e)
+          return
+        }
       }
 
       setReferralCode(code)
