@@ -45,8 +45,8 @@ const TelegramAuth = () => {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
   const [info, setInfo] = useState('')
-  const [showTelegramIdInput, setShowTelegramIdInput] = useState(false)
-  const [telegramIdInput, setTelegramIdInput] = useState('')
+  const [showAuthCodeInput, setShowAuthCodeInput] = useState(false)
+  const [authCodeInput, setAuthCodeInput] = useState('')
   const { loginWithTelegram } = useAuth()
   const navigate = useNavigate()
 
@@ -357,16 +357,17 @@ const TelegramAuth = () => {
           {isLoading ? 'Авторизация...' : 'Войти через Telegram'}
         </button>
 
-        {showTelegramIdInput && (
+        {showAuthCodeInput && (
           <div style={{ marginTop: '20px', padding: '20px', background: 'rgba(255, 255, 255, 0.05)', borderRadius: '10px' }}>
             <label style={{ display: 'block', marginBottom: '10px', fontSize: '14px' }}>
-              Введите ваш Telegram ID:
+              Введите код авторизации из бота (6 цифр):
             </label>
             <input
-              type="number"
-              value={telegramIdInput}
-              onChange={(e) => setTelegramIdInput(e.target.value)}
-              placeholder="Например: 123456789"
+              type="text"
+              value={authCodeInput}
+              onChange={(e) => setAuthCodeInput(e.target.value.replace(/\D/g, '').slice(0, 6))}
+              placeholder="123456"
+              maxLength={6}
               style={{
                 width: '100%',
                 padding: '10px',
@@ -374,16 +375,19 @@ const TelegramAuth = () => {
                 border: '1px solid rgba(255, 255, 255, 0.2)',
                 background: 'rgba(255, 255, 255, 0.1)',
                 color: 'white',
-                fontSize: '16px',
-                marginBottom: '10px'
+                fontSize: '24px',
+                textAlign: 'center',
+                letterSpacing: '8px',
+                marginBottom: '10px',
+                fontFamily: 'monospace'
               }}
             />
             <div style={{ display: 'flex', gap: '10px' }}>
               <button
                 onClick={async () => {
-                  const telegramId = parseInt(telegramIdInput.trim())
-                  if (isNaN(telegramId) || telegramId <= 0) {
-                    setError('Неверный формат Telegram ID. Должно быть положительное число.')
+                  const authCode = authCodeInput.trim()
+                  if (authCode.length !== 6) {
+                    setError('Код должен состоять из 6 цифр')
                     return
                   }
                   
@@ -392,7 +396,7 @@ const TelegramAuth = () => {
                   setInfo('Проверяю авторизацию...')
                   
                   try {
-                    console.log('Checking auth via API with telegram_id:', telegramId)
+                    console.log('Checking auth via API with auth_code:', authCode)
                     const API_URL = import.meta.env.VITE_API_URL || 'https://cloak-vpn.vercel.app'
                     const response = await fetch(`${API_URL}/api/telegram/check-auth`, {
                       method: 'POST',
@@ -400,7 +404,7 @@ const TelegramAuth = () => {
                         'Content-Type': 'application/json',
                       },
                       body: JSON.stringify({
-                        telegram_id: telegramId,
+                        auth_code: authCode,
                       }),
                     })
                     
@@ -435,7 +439,7 @@ const TelegramAuth = () => {
                         }
                       }
                     } else {
-                      setError(result.error || 'Авторизация не найдена. Убедитесь, что вы авторизовались в боте в течение последних 5 минут.')
+                      setError(result.error || 'Неверный код или код устарел. Убедитесь, что вы ввели код из бота и авторизовались в течение последних 5 минут.')
                     }
                   } catch (e: any) {
                     console.error('Error checking auth:', e)
@@ -444,16 +448,16 @@ const TelegramAuth = () => {
                     setIsLoading(false)
                   }
                 }}
-                disabled={isLoading || !telegramIdInput.trim()}
+                disabled={isLoading || authCodeInput.length !== 6}
                 className="telegram-button"
                 style={{ flex: 1, background: '#4CAF50' }}
               >
-                {isLoading ? 'Проверка...' : '✅ Проверить'}
+                {isLoading ? 'Проверка...' : '✅ Проверить код'}
               </button>
               <button
                 onClick={() => {
-                  setShowTelegramIdInput(false)
-                  setTelegramIdInput('')
+                  setShowAuthCodeInput(false)
+                  setAuthCodeInput('')
                   setError('')
                 }}
                 className="telegram-button"
@@ -465,7 +469,7 @@ const TelegramAuth = () => {
           </div>
         )}
 
-        {info && window.electron?.openExternal && !showTelegramIdInput && (
+        {info && window.electron?.openExternal && !showAuthCodeInput && (
           <button
             onClick={async () => {
               setIsLoading(true)
@@ -516,11 +520,11 @@ const TelegramAuth = () => {
                   telegramId = authData.user?.telegram_id
                 }
                 
-                // Если нет telegram_id, показываем форму для ввода
+                // Если нет telegram_id, показываем форму для ввода кода авторизации
                 if (!telegramId) {
-                  setShowTelegramIdInput(true)
+                  setShowAuthCodeInput(true)
                   setIsLoading(false)
-                  setInfo('Введите ваш Telegram ID. Вы можете найти его в боте @userinfobot или после авторизации в боте.')
+                  setInfo('Введите код авторизации из бота Telegram (6 цифр)')
                   return
                 }
                 
