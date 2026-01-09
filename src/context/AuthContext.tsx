@@ -54,32 +54,40 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
+    console.log('AuthContext: Checking for saved user...')
     // Проверяем сохраненную сессию
     const savedUser = localStorage.getItem('cloakvpn_user')
+    console.log('AuthContext: savedUser from localStorage:', savedUser ? 'exists' : 'not found')
     if (savedUser) {
       try {
         const parsedUser = JSON.parse(savedUser)
+        console.log('AuthContext: Parsed user:', parsedUser)
         setUser(parsedUser)
         
         // Проверяем актуальность данных пользователя в БД
         if (window.electronAPI?.db && parsedUser.id) {
+          console.log('AuthContext: Checking user in DB...')
           databaseService.getUser(parseInt(parsedUser.id))
             .then((result) => {
               if (result.success && result.user) {
                 const updatedUser = mapDbUserToUser(result.user)
+                console.log('AuthContext: User updated from DB:', updatedUser)
                 setUser(updatedUser)
                 localStorage.setItem('cloakvpn_user', JSON.stringify(updatedUser))
               }
             })
-            .catch(() => {
-              // Игнорируем ошибки при обновлении
+            .catch((err) => {
+              console.error('AuthContext: Error updating user from DB:', err)
             })
         }
       } catch (error) {
         console.error('Ошибка загрузки пользователя:', error)
         localStorage.removeItem('cloakvpn_user')
       }
+    } else {
+      console.log('AuthContext: No saved user, user will be null')
     }
+    console.log('AuthContext: Setting isLoading to false')
     setIsLoading(false)
   }, [])
 

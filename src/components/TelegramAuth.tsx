@@ -217,9 +217,10 @@ const TelegramAuth = () => {
   // Если есть данные пользователя Telegram, показываем их
   const telegramUser = window.Telegram?.WebApp?.initDataUnsafe?.user
 
+  console.log('TelegramAuth component rendering')
   return (
-    <div className="auth-container">
-      <div className="auth-card">
+    <div className="auth-container" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div className="auth-card" style={{ background: '#1A1625', padding: '40px', borderRadius: '20px', maxWidth: '500px', width: '100%' }}>
         <div className="auth-header">
           <h1 className="auth-title">Вход через Telegram</h1>
           <p className="auth-subtitle">Быстрый и безопасный вход через ваш Telegram аккаунт</p>

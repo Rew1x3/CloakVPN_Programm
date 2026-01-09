@@ -8,15 +8,20 @@ interface PublicRouteProps {
 const PublicRoute = ({ children }: PublicRouteProps) => {
   const { isAuthenticated, isLoading } = useAuth()
 
+  console.log('PublicRoute - isLoading:', isLoading, 'isAuthenticated:', isAuthenticated)
+
   if (isLoading) {
-    return <div>Загрузка...</div>
+    console.log('PublicRoute - showing loading')
+    return <div style={{ color: 'white', padding: '20px', background: '#0F0B1E', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Загрузка...</div>
   }
 
   if (isAuthenticated) {
+    console.log('PublicRoute - redirecting to /')
     return <Navigate to="/" replace />
   }
 
-  return <>{children}</>
+  console.log('PublicRoute - rendering children')
+  return <div style={{ minHeight: '100vh', background: '#0F0B1E' }}>{children}</div>
 }
 
 export default PublicRoute

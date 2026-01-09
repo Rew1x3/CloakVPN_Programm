@@ -32,9 +32,17 @@ function createWindow() {
     mainWindow.webContents.openDevTools()
   } else {
     const indexPath = join(__dirname, '../dist/index.html')
-    mainWindow.loadFile(indexPath).catch((err) => {
-      console.error('Error loading index.html:', err)
-    })
+    console.log('Loading index.html from:', indexPath)
+    mainWindow.loadFile(indexPath)
+      .then(() => {
+        console.log('Index.html loaded successfully')
+        // Временно открываем DevTools для отладки
+        mainWindow.webContents.openDevTools()
+      })
+      .catch((err) => {
+        console.error('Error loading index.html:', err)
+        mainWindow.webContents.openDevTools()
+      })
   }
 
   mainWindow.on('closed', () => {

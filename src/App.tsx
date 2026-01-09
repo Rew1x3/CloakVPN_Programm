@@ -23,6 +23,8 @@ function App() {
   useEffect(() => {
     const loadApp = async () => {
       try {
+        console.log('Starting app load...')
+        // Упрощенная загрузка - убираем длительные ожидания
         // Ждем загрузки DOM
         if (document.readyState === 'loading') {
           await new Promise((resolve) => {
@@ -30,45 +32,15 @@ function App() {
           })
         }
 
-        // Ждем загрузки всех изображений
-        const images = document.querySelectorAll('img')
-        const imagePromises = Array.from(images).map((img) => {
-          if (img.complete) return Promise.resolve()
-          return new Promise((resolve, reject) => {
-            img.onload = resolve
-            img.onerror = resolve // Продолжаем даже если изображение не загрузилось
-            setTimeout(resolve, 2000) // Таймаут на случай проблем
-          })
-        })
+        // Минимальная задержка для показа лоадера
+        await new Promise((resolve) => setTimeout(resolve, 1000))
 
-        await Promise.all(imagePromises)
-
-        // Ждем загрузки шрифтов
-        if (document.fonts && document.fonts.ready) {
-          await document.fonts.ready
-        }
-
-        // Минимальное время для показа лоадера (чтобы пользователь увидел анимацию)
-        const minLoadTime = 2000
-        const startTime = Date.now()
-        
-        await Promise.all([
-          new Promise((resolve) => setTimeout(resolve, minLoadTime))
-        ])
-
-        const elapsed = Date.now() - startTime
-        if (elapsed < minLoadTime) {
-          await new Promise((resolve) => setTimeout(resolve, minLoadTime - elapsed))
-        }
-
-        // Дополнительная небольшая задержка для плавности
-        await new Promise((resolve) => setTimeout(resolve, 300))
-
+        console.log('App loaded, setting isLoading to false')
         setIsLoading(false)
       } catch (error) {
         console.error('Ошибка загрузки:', error)
         // В случае ошибки все равно показываем приложение
-        setTimeout(() => setIsLoading(false), 2000)
+        setTimeout(() => setIsLoading(false), 1000)
       }
     }
 
@@ -76,8 +48,11 @@ function App() {
   }, [])
 
   if (isLoading) {
+    console.log('App is loading...')
     return <Loader />
   }
+
+  console.log('App loaded, rendering routes')
 
   return (
     <AuthProvider>
@@ -109,7 +84,7 @@ function App() {
               }
             />
             <Route
-              path="/*"
+              path="/"
               element={
                 <ProtectedRoute>
                   <div className="app-container">
