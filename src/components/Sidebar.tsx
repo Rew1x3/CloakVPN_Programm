@@ -13,6 +13,7 @@ const Sidebar = () => {
     { path: '/statistics', label: 'Статистика' },
     { path: '/settings', label: 'Настройки' },
     { path: '/profile', label: 'Профиль' },
+    { path: '/referral', label: 'Реферальная программа' },
   ]
 
   return (

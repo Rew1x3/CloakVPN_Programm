@@ -437,7 +437,8 @@ const TelegramAuth = () => {
                           }
                           localStorage.setItem('cloakvpn_user', JSON.stringify(mappedUser))
                           localStorage.removeItem('cloakvpn_app_auth')
-                          window.location.href = '/'
+                          // Автоматическое обновление страницы после авторизации
+                          window.location.reload()
                           return
                         }
                       }

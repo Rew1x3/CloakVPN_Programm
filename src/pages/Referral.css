@@ -1,0 +1,322 @@
+.referral-page {
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.page-header {
+  margin-bottom: 2rem;
+}
+
+.page-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.page-subtitle {
+  font-size: 1rem;
+  color: var(--text-secondary);
+}
+
+.referral-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.referral-card,
+.referrals-list-card,
+.info-card {
+  background: var(--bg-secondary);
+  border-radius: 16px;
+  padding: 2rem;
+  border: 1px solid var(--border);
+}
+
+.main-card {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+  color: white;
+  border: none;
+}
+
+.main-card .card-header h2,
+.main-card .card-header p {
+  color: white;
+}
+
+.card-header {
+  margin-bottom: 1.5rem;
+}
+
+.card-header h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.card-header p {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.referral-link-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.link-input-wrapper {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.link-input {
+  flex: 1;
+  padding: 0.875rem 1rem;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  color: white;
+  font-size: 0.95rem;
+  font-family: 'Courier New', monospace;
+}
+
+.link-input::placeholder {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.copy-button {
+  padding: 0.875rem 1.5rem;
+  background: white;
+  color: var(--primary);
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.copy-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.copy-button.copied {
+  background: var(--success);
+  color: white;
+}
+
+.referral-code-display {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+}
+
+.code-label {
+  font-size: 0.9rem;
+  opacity: 0.9;
+}
+
+.code-value {
+  font-size: 1.1rem;
+  font-weight: 700;
+  font-family: 'Courier New', monospace;
+  letter-spacing: 2px;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.stat-card {
+  background: var(--bg-secondary);
+  border-radius: 12px;
+  padding: 1.5rem;
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.stat-icon {
+  font-size: 2.5rem;
+}
+
+.stat-content {
+  flex: 1;
+}
+
+.stat-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 0.25rem;
+}
+
+.stat-label {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.referrals-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.referral-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: var(--bg-primary);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  transition: all 0.2s;
+}
+
+.referral-item:hover {
+  border-color: var(--primary);
+  transform: translateX(4px);
+}
+
+.referral-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1.25rem;
+  color: white;
+  flex-shrink: 0;
+}
+
+.referral-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.referral-name {
+  font-weight: 600;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.referral-username {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  font-weight: 400;
+}
+
+.referral-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.85rem;
+}
+
+.referral-date {
+  color: var(--text-secondary);
+}
+
+.referral-premium {
+  font-weight: 600;
+  padding: 0.25rem 0.75rem;
+  border-radius: 6px;
+  display: inline-block;
+  width: fit-content;
+}
+
+.referral-premium.active {
+  background: var(--success);
+  color: white;
+}
+
+.referral-premium.expired {
+  background: var(--error);
+  color: white;
+}
+
+.info-card {
+  background: var(--bg-secondary);
+}
+
+.info-card h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 1rem;
+}
+
+.info-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.info-list li {
+  padding-left: 1.5rem;
+  position: relative;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.info-list li::before {
+  content: '✓';
+  position: absolute;
+  left: 0;
+  color: var(--primary);
+  font-weight: 700;
+}
+
+.info-list li strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.loading-state {
+  text-align: center;
+  padding: 3rem;
+  color: var(--text-secondary);
+  font-size: 1.1rem;
+}
+
+@media (max-width: 768px) {
+  .referral-page {
+    padding: 1rem;
+  }
+
+  .link-input-wrapper {
+    flex-direction: column;
+  }
+
+  .copy-button {
+    width: 100%;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+}
+

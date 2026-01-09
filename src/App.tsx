@@ -8,6 +8,7 @@ import Login from './pages/Login'
 import Register from './pages/Register'
 import Telegram from './pages/Telegram'
 import Profile from './pages/Profile'
+import Referral from './pages/Referral'
 import Sidebar from './components/Sidebar'
 import TitleBar from './components/TitleBar'
 import Loader from './components/Loader'
@@ -98,6 +99,7 @@ function App() {
                           <Route path="/settings" element={<Settings />} />
                           <Route path="/statistics" element={<Statistics />} />
                           <Route path="/profile" element={<Profile />} />
+                          <Route path="/referral" element={<Referral />} />
                         </Routes>
                       </main>
                     </div>
