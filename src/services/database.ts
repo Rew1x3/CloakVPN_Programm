@@ -9,12 +9,12 @@ export interface DatabaseUser {
   subscription_plan?: 'free' | 'premium' | 'yearly' | 'family'
   subscription_expires_at?: string | null
   subscription_is_active?: boolean
-  telegram_id?: number
-  telegram_username?: string
-  telegram_first_name?: string
-  telegram_last_name?: string
-  telegram_photo_url?: string
+  telegram_id?: number | null
+  telegram_username?: string | null
+  auth_provider?: 'email' | 'telegram'
+  last_login?: string | null
   created_at?: string
+  updated_at?: string
 }
 
 export const databaseService = {
@@ -33,9 +33,9 @@ export const databaseService = {
         return { success: false, error: 'Пользователь не найден' }
       }
 
-      // Получаем профиль пользователя из таблицы users
+      // Получаем профиль пользователя из таблицы profiles
       const { data: profile, error: profileError } = await supabase
-        .from('users')
+        .from('profiles')
         .select('*')
         .eq('id', data.user.id)
         .single()
@@ -45,13 +45,13 @@ export const databaseService = {
         console.error('Ошибка получения профиля:', profileError)
       }
 
-      // Если профиля нет, создаем его
+      // Если профиля нет, создаем его (триггер должен создать автоматически, но на всякий случай)
       if (!profile) {
         const { data: newProfile, error: createError } = await supabase
-          .from('users')
+          .from('profiles')
           .insert({
             id: data.user.id,
-            email: data.user.email,
+            email: data.user.email || '',
             name: data.user.email?.split('@')[0] || 'User',
             subscription_plan: 'free',
             subscription_is_active: true,
@@ -95,12 +95,12 @@ export const databaseService = {
         return { success: false, error: 'Не удалось создать пользователя' }
       }
 
-      // Создаем профиль пользователя в таблице users
+      // Создаем профиль пользователя в таблице profiles (триггер должен создать автоматически)
       const { data: profile, error: profileError } = await supabase
-        .from('users')
+        .from('profiles')
         .insert({
           id: data.user.id,
-          email: data.user.email,
+          email: data.user.email || '',
           name,
           subscription_plan: 'free',
           subscription_is_active: true,
@@ -130,7 +130,7 @@ export const databaseService = {
     try {
       // Ищем пользователя по telegram_id
       const { data: existingUser, error: findError } = await supabase
-        .from('users')
+        .from('profiles')
         .select('*')
         .eq('telegram_id', telegramData.id)
         .single()
@@ -138,12 +138,10 @@ export const databaseService = {
       if (existingUser && !findError) {
         // Пользователь уже существует, обновляем данные
         const { data: updatedUser, error: updateError } = await supabase
-          .from('users')
+          .from('profiles')
           .update({
             telegram_username: telegramData.username,
-            telegram_first_name: telegramData.first_name,
-            telegram_last_name: telegramData.last_name,
-            telegram_photo_url: telegramData.photo_url,
+            telegram_id: telegramData.id,
           })
           .eq('id', existingUser.id)
           .select()
@@ -182,20 +180,18 @@ export const databaseService = {
         return { success: false, error: 'Не удалось создать пользователя' }
       }
 
-      // Создаем профиль пользователя
+      // Создаем профиль пользователя (триггер должен создать автоматически, но обновляем Telegram данные)
       const { data: newUser, error: profileError } = await supabase
-        .from('users')
-        .insert({
+        .from('profiles')
+        .upsert({
           id: authData.user.id,
           email: email,
           name: `${telegramData.first_name} ${telegramData.last_name || ''}`.trim(),
           telegram_id: telegramData.id,
           telegram_username: telegramData.username,
-          telegram_first_name: telegramData.first_name,
-          telegram_last_name: telegramData.last_name,
-          telegram_photo_url: telegramData.photo_url,
           subscription_plan: 'free',
           subscription_is_active: true,
+          auth_provider: 'telegram',
         })
         .select()
         .single()
@@ -215,7 +211,7 @@ export const databaseService = {
   async updateUser(userId: string, userData: Partial<DatabaseUser>) {
     try {
       const { data, error } = await supabase
-        .from('users')
+        .from('profiles')
         .update(userData)
         .eq('id', userId)
         .select()
@@ -236,7 +232,7 @@ export const databaseService = {
   async getUser(userId: string) {
     try {
       const { data, error } = await supabase
-        .from('users')
+        .from('profiles')
         .select('*')
         .eq('id', userId)
         .single()

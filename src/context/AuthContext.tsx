@@ -39,14 +39,14 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 const mapDbUserToUser = (dbUser: any): User => {
   return {
     id: dbUser.id.toString(),
-    email: dbUser.email,
-    name: dbUser.name,
+    email: dbUser.email || '',
+    name: dbUser.name || 'User',
     subscription: {
       plan: (dbUser.subscription_plan || 'free') as 'free' | 'premium' | 'yearly' | 'family',
       expiresAt: dbUser.subscription_expires_at || null,
       isActive: dbUser.subscription_is_active !== false,
     },
-    createdAt: dbUser.created_at || dbUser.createdAt || new Date().toISOString(),
+    createdAt: dbUser.created_at || new Date().toISOString(),
   }
 }
 

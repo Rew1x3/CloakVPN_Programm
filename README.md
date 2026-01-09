@@ -175,38 +175,11 @@ VITE_SUPABASE_URL=https://your-project.supabase.co
 VITE_SUPABASE_ANON_KEY=your-anon-key-here
 ```
 
-4. Создайте таблицу `users` в Supabase SQL Editor:
+4. Убедитесь, что таблица `profiles` создана (она используется совместно с сайтом)
 
-```sql
-CREATE TABLE users (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  email TEXT UNIQUE NOT NULL,
-  name TEXT NOT NULL,
-  subscription_plan TEXT DEFAULT 'free' CHECK (subscription_plan IN ('free', 'premium', 'yearly', 'family')),
-  subscription_expires_at TIMESTAMPTZ,
-  subscription_is_active BOOLEAN DEFAULT true,
-  telegram_id BIGINT UNIQUE,
-  telegram_username TEXT,
-  telegram_first_name TEXT,
-  telegram_last_name TEXT,
-  telegram_photo_url TEXT,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
-);
+Приложение использует существующую таблицу `profiles` из вашего Supabase проекта. Если таблица еще не создана, используйте миграции из папки `supabase/migrations` вашего сайта.
 
--- Включаем Row Level Security
-ALTER TABLE users ENABLE ROW LEVEL SECURITY;
-
--- Политика: пользователи могут читать только свои данные
-CREATE POLICY "Users can read own data" ON users
-  FOR SELECT USING (auth.uid() = id);
-
--- Политика: пользователи могут обновлять только свои данные
-CREATE POLICY "Users can update own data" ON users
-  FOR UPDATE USING (auth.uid() = id);
-```
-
-### Структура таблицы `users`
+### Структура таблицы `profiles`
 - `id` - Уникальный идентификатор (UUID, связывается с auth.users)
 - `email` - Email пользователя (уникальный)
 - `name` - Имя пользователя
@@ -215,9 +188,8 @@ CREATE POLICY "Users can update own data" ON users
 - `subscription_is_active` - Активна ли подписка
 - `telegram_id` - ID Telegram (опционально, уникальный)
 - `telegram_username` - Username Telegram
-- `telegram_first_name` - Имя из Telegram
-- `telegram_last_name` - Фамилия из Telegram
-- `telegram_photo_url` - URL фото из Telegram
+- `auth_provider` - Провайдер аутентификации ('email' или 'telegram')
+- `last_login` - Дата и время последнего входа
 - `created_at` - Дата создания
 - `updated_at` - Дата обновления
 
