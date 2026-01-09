@@ -357,7 +357,115 @@ const TelegramAuth = () => {
           {isLoading ? 'Авторизация...' : 'Войти через Telegram'}
         </button>
 
-        {info && window.electron?.openExternal && (
+        {showTelegramIdInput && (
+          <div style={{ marginTop: '20px', padding: '20px', background: 'rgba(255, 255, 255, 0.05)', borderRadius: '10px' }}>
+            <label style={{ display: 'block', marginBottom: '10px', fontSize: '14px' }}>
+              Введите ваш Telegram ID:
+            </label>
+            <input
+              type="number"
+              value={telegramIdInput}
+              onChange={(e) => setTelegramIdInput(e.target.value)}
+              placeholder="Например: 123456789"
+              style={{
+                width: '100%',
+                padding: '10px',
+                borderRadius: '8px',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+                background: 'rgba(255, 255, 255, 0.1)',
+                color: 'white',
+                fontSize: '16px',
+                marginBottom: '10px'
+              }}
+            />
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button
+                onClick={async () => {
+                  const telegramId = parseInt(telegramIdInput.trim())
+                  if (isNaN(telegramId) || telegramId <= 0) {
+                    setError('Неверный формат Telegram ID. Должно быть положительное число.')
+                    return
+                  }
+                  
+                  setIsLoading(true)
+                  setError('')
+                  setInfo('Проверяю авторизацию...')
+                  
+                  try {
+                    console.log('Checking auth via API with telegram_id:', telegramId)
+                    const API_URL = import.meta.env.VITE_API_URL || 'https://cloak-vpn.vercel.app'
+                    const response = await fetch(`${API_URL}/api/telegram/check-auth`, {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                      },
+                      body: JSON.stringify({
+                        telegram_id: telegramId,
+                      }),
+                    })
+                    
+                    const result = await response.json()
+                    console.log('API check result:', result)
+                    
+                    if (result.success && result.authenticated && result.session?.access_token) {
+                      const { supabase } = await import('../lib/supabase')
+                      const { data, error } = await supabase.auth.setSession({
+                        access_token: result.session.access_token,
+                        refresh_token: result.session.refresh_token || '',
+                      })
+                      
+                      if (!error && data.user) {
+                        const userResult = await databaseService.getCurrentUser()
+                        if (userResult.success && userResult.user) {
+                          const mappedUser = {
+                            id: userResult.user.id.toString(),
+                            email: userResult.user.email || '',
+                            name: userResult.user.name || 'User',
+                            subscription: {
+                              plan: (userResult.user.subscription_plan || 'free') as 'free' | 'premium' | 'yearly' | 'family',
+                              expiresAt: userResult.user.subscription_expires_at || null,
+                              isActive: userResult.user.subscription_is_active !== false,
+                            },
+                            createdAt: userResult.user.created_at || new Date().toISOString(),
+                          }
+                          localStorage.setItem('cloakvpn_user', JSON.stringify(mappedUser))
+                          localStorage.removeItem('cloakvpn_app_auth')
+                          window.location.href = '/'
+                          return
+                        }
+                      }
+                    } else {
+                      setError(result.error || 'Авторизация не найдена. Убедитесь, что вы авторизовались в боте в течение последних 5 минут.')
+                    }
+                  } catch (e: any) {
+                    console.error('Error checking auth:', e)
+                    setError(e.message || 'Ошибка проверки авторизации')
+                  } finally {
+                    setIsLoading(false)
+                  }
+                }}
+                disabled={isLoading || !telegramIdInput.trim()}
+                className="telegram-button"
+                style={{ flex: 1, background: '#4CAF50' }}
+              >
+                {isLoading ? 'Проверка...' : '✅ Проверить'}
+              </button>
+              <button
+                onClick={() => {
+                  setShowTelegramIdInput(false)
+                  setTelegramIdInput('')
+                  setError('')
+                }}
+                className="telegram-button"
+                style={{ flex: 1, background: '#666' }}
+              >
+                Отмена
+              </button>
+            </div>
+          </div>
+        )}
+
+        {info && window.electron?.openExternal && !showTelegramIdInput && (
           <button
             onClick={async () => {
               setIsLoading(true)
