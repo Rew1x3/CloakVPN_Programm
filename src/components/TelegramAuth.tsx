@@ -55,63 +55,96 @@ const TelegramAuth = () => {
     setInfo('')
 
     try {
-      console.log('handleAuthFromDeepLink: received authData', authData)
+      console.log('handleAuthFromDeepLink: received authData', {
+        hasUser: !!authData.user,
+        hasSession: !!authData.session,
+        hasAccessToken: !!authData.session?.access_token,
+        userId: authData.user?.id,
+        telegramId: authData.user?.telegram_id
+      })
       
       // Сначала устанавливаем сессию Supabase, если есть токены
       if (authData.session?.access_token) {
-        console.log('Setting Supabase session...')
+        console.log('Setting Supabase session with access_token...')
         const { supabase } = await import('../lib/supabase')
-        const { data, error } = await supabase.auth.setSession({
+        
+        const sessionResult = await supabase.auth.setSession({
           access_token: authData.session.access_token,
           refresh_token: authData.session.refresh_token || '',
         })
         
-        if (error) {
-          console.error('Error setting Supabase session:', error)
-          throw new Error('Ошибка установки сессии: ' + error.message)
+        if (sessionResult.error) {
+          console.error('Error setting Supabase session:', sessionResult.error)
+          throw new Error('Ошибка установки сессии: ' + sessionResult.error.message)
         }
         
-        if (data.user) {
-          console.log('Supabase session set successfully, user:', data.user.id)
+        console.log('Supabase session set successfully:', {
+          userId: sessionResult.data.user?.id,
+          email: sessionResult.data.user?.email,
+          hasSession: !!sessionResult.data.session
+        })
+        
+        // Ждем немного, чтобы сессия точно установилась
+        await new Promise(resolve => setTimeout(resolve, 300))
+        
+        // Получаем профиль пользователя из Supabase
+        const result = await databaseService.getCurrentUser()
+        console.log('getCurrentUser result:', {
+          success: result.success,
+          hasUser: !!result.user,
+          error: result.error
+        })
+        
+        if (result.success && result.user) {
+          console.log('User profile loaded:', result.user)
+          // Преобразуем данные из БД в формат User
+          const mappedUser = {
+            id: result.user.id.toString(),
+            email: result.user.email || '',
+            name: result.user.name || 'User',
+            subscription: {
+              plan: (result.user.subscription_plan || 'free') as 'free' | 'premium' | 'yearly' | 'family',
+              expiresAt: result.user.subscription_expires_at || null,
+              isActive: result.user.subscription_is_active !== false,
+            },
+            createdAt: result.user.created_at || new Date().toISOString(),
+          }
           
-          // Получаем профиль пользователя из Supabase
-          const result = await databaseService.getCurrentUser()
-          if (result.success && result.user) {
-            console.log('User profile loaded:', result.user)
-            // Преобразуем данные из БД в формат User
+          // Сохраняем пользователя в localStorage
+          localStorage.setItem('cloakvpn_user', JSON.stringify(mappedUser))
+          console.log('User saved to localStorage, navigating to /')
+          
+          // Перезагружаем страницу для обновления AuthContext
+          // Это гарантирует, что AuthContext увидит сессию Supabase
+          window.location.href = '/'
+          return
+        } else {
+          console.error('Failed to get user profile:', result.error)
+          // Пытаемся использовать данные из authData как fallback
+          if (authData.user) {
+            console.log('Using authData.user as fallback')
             const mappedUser = {
-              id: result.user.id.toString(),
-              email: result.user.email || '',
-              name: result.user.name || 'User',
+              id: authData.user.id?.toString() || '',
+              email: authData.user.email || `telegram_${authData.user.telegram_id}@cloakvpn.local`,
+              name: authData.user.name || 'User',
               subscription: {
-                plan: (result.user.subscription_plan || 'free') as 'free' | 'premium' | 'yearly' | 'family',
-                expiresAt: result.user.subscription_expires_at || null,
-                isActive: result.user.subscription_is_active !== false,
+                plan: (authData.user.subscription_plan || 'free') as 'free' | 'premium' | 'yearly' | 'family',
+                expiresAt: authData.user.subscription_expires_at || null,
+                isActive: authData.user.subscription_is_active !== false,
               },
-              createdAt: result.user.created_at || new Date().toISOString(),
+              createdAt: authData.user.created_at || new Date().toISOString(),
             }
-            
-            // Сохраняем пользователя в localStorage
             localStorage.setItem('cloakvpn_user', JSON.stringify(mappedUser))
-            console.log('User saved to localStorage')
-            
-            // Ждем немного, чтобы сессия точно установилась
-            await new Promise(resolve => setTimeout(resolve, 500))
-            
-            // Перезагружаем страницу для обновления AuthContext
-            // Это гарантирует, что AuthContext увидит сессию Supabase
             window.location.href = '/'
             return
-          } else {
-            console.error('Failed to get user profile:', result.error)
-            throw new Error('Не удалось получить профиль пользователя')
           }
+          throw new Error('Не удалось получить профиль пользователя: ' + (result.error || 'Unknown error'))
         }
       }
       
       // Fallback: если нет токенов, используем старый метод через loginWithTelegram
-      if (authData.user.telegram_id) {
-        console.log('Fallback: using loginWithTelegram')
+      if (authData.user?.telegram_id) {
+        console.log('Fallback: using loginWithTelegram with telegram_id:', authData.user.telegram_id)
         const telegramUser = {
           id: authData.user.telegram_id,
           first_name: authData.user.name?.split(' ')[0] || 'User',
@@ -121,7 +154,7 @@ const TelegramAuth = () => {
         await loginWithTelegram(telegramUser)
         navigate('/')
       } else {
-        throw new Error('Не удалось получить данные пользователя')
+        throw new Error('Не удалось получить данные пользователя: нет токенов и нет telegram_id')
       }
     } catch (err: any) {
       console.error('Deep link auth error:', err)
