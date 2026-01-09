@@ -105,6 +105,12 @@ function App() {
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="*"
+              element={
+                <Navigate to="/telegram" replace />
+              }
+            />
           </Routes>
         </Router>
       </VPNProvider>

@@ -85,7 +85,7 @@ AppImage файл доступен в [Releases](https://github.com/Rew1x3/Cloak
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.3.3-3178C6?logo=typescript&logoColor=white)
 ![Electron](https://img.shields.io/badge/Electron-28.0.0-47848F?logo=electron&logoColor=white)
 ![Vite](https://img.shields.io/badge/Vite-5.0.8-646CFF?logo=vite&logoColor=white)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-8.11.3-4169E1?logo=postgresql&logoColor=white)
+![Supabase](https://img.shields.io/badge/Supabase-2.90.1-3ECF8E?logo=supabase&logoColor=white)
 
 </div>
 
@@ -94,7 +94,7 @@ AppImage файл доступен в [Releases](https://github.com/Rew1x3/Cloak
 - **TypeScript** - Типизация для надежности кода
 - **Vite** - Быстрый сборщик и dev-сервер
 - **Electron** - Кроссплатформенное десктопное приложение
-- **PostgreSQL** - Надежная база данных
+- **Supabase** - Backend-as-a-Service с PostgreSQL базой данных
 - **React Router** - Маршрутизация в приложении
 - **Framer Motion** - Плавные анимации
 - **Recharts** - Красивые графики и визуализация
@@ -162,32 +162,64 @@ CloakVPN/
 
 ## 🗄️ База данных
 
-Приложение использует PostgreSQL для хранения данных пользователей. При первом запуске автоматически создаются необходимые таблицы.
+Приложение использует **Supabase** (Backend-as-a-Service) для хранения данных пользователей. Supabase предоставляет PostgreSQL базу данных с REST API и встроенной аутентификацией.
 
-### Структура таблиц
+### Настройка Supabase
 
-#### Таблица `users`
-- `id` - Уникальный идентификатор (UUID)
+1. Создайте проект на [supabase.com](https://supabase.com)
+2. Получите `URL` и `anon key` из настроек проекта
+3. Создайте файл `.env` в корне проекта:
+
+```env
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your-anon-key-here
+```
+
+4. Создайте таблицу `users` в Supabase SQL Editor:
+
+```sql
+CREATE TABLE users (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email TEXT UNIQUE NOT NULL,
+  name TEXT NOT NULL,
+  subscription_plan TEXT DEFAULT 'free' CHECK (subscription_plan IN ('free', 'premium', 'yearly', 'family')),
+  subscription_expires_at TIMESTAMPTZ,
+  subscription_is_active BOOLEAN DEFAULT true,
+  telegram_id BIGINT UNIQUE,
+  telegram_username TEXT,
+  telegram_first_name TEXT,
+  telegram_last_name TEXT,
+  telegram_photo_url TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Включаем Row Level Security
+ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+
+-- Политика: пользователи могут читать только свои данные
+CREATE POLICY "Users can read own data" ON users
+  FOR SELECT USING (auth.uid() = id);
+
+-- Политика: пользователи могут обновлять только свои данные
+CREATE POLICY "Users can update own data" ON users
+  FOR UPDATE USING (auth.uid() = id);
+```
+
+### Структура таблицы `users`
+- `id` - Уникальный идентификатор (UUID, связывается с auth.users)
 - `email` - Email пользователя (уникальный)
 - `name` - Имя пользователя
-- `password_hash` - Хеш пароля (SHA-256)
-- `telegram_id` - ID Telegram (опционально)
+- `subscription_plan` - План подписки (free, premium, yearly, family)
+- `subscription_expires_at` - Дата истечения подписки
+- `subscription_is_active` - Активна ли подписка
+- `telegram_id` - ID Telegram (опционально, уникальный)
 - `telegram_username` - Username Telegram
 - `telegram_first_name` - Имя из Telegram
 - `telegram_last_name` - Фамилия из Telegram
 - `telegram_photo_url` - URL фото из Telegram
-- `subscription_plan` - План подписки (free, premium, yearly, family)
-- `subscription_expires_at` - Дата истечения подписки
-- `subscription_is_active` - Активна ли подписка
 - `created_at` - Дата создания
 - `updated_at` - Дата обновления
-
-#### Таблица `sessions`
-- `id` - Уникальный идентификатор
-- `user_id` - ID пользователя
-- `token` - Токен сессии
-- `expires_at` - Дата истечения сессии
-- `created_at` - Дата создания
 
 ---
 

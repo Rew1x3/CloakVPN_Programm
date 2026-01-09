@@ -36,12 +36,9 @@ function createWindow() {
     mainWindow.loadFile(indexPath)
       .then(() => {
         console.log('Index.html loaded successfully')
-        // Временно открываем DevTools для отладки
-        mainWindow.webContents.openDevTools()
       })
       .catch((err) => {
         console.error('Error loading index.html:', err)
-        mainWindow.webContents.openDevTools()
       })
   }
 
