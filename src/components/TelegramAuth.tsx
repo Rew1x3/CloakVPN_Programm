@@ -254,6 +254,83 @@ const TelegramAuth = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // Функция для проверки кода авторизации
+  const handleCheckCode = async (code: string) => {
+    const authCode = code.trim()
+    if (authCode.length !== 6) {
+      setError('Код должен состоять из 6 цифр')
+      return
+    }
+    
+    setIsLoading(true)
+    setError('')
+    setInfo('Проверяю авторизацию...')
+    
+    try {
+      // Очищаем код от пробелов и лишних символов
+      const cleanCode = authCode.trim().replace(/\s/g, '')
+      console.log('Checking auth via API with auth_code:', cleanCode, '(original:', authCode, ')')
+      const API_URL = import.meta.env.VITE_API_URL || 'https://cloak-vpn.vercel.app'
+      const response = await fetch(`${API_URL}/api/telegram/check-auth`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          auth_code: cleanCode,
+        }),
+      })
+      
+      const result = await response.json()
+      console.log('API check result:', result)
+      
+      if (result.success && result.authenticated && result.session?.access_token) {
+        const { supabase } = await import('../lib/supabase')
+        const { data, error } = await supabase.auth.setSession({
+          access_token: result.session.access_token,
+          refresh_token: result.session.refresh_token || '',
+        })
+        
+        if (!error && data.user) {
+          const userResult = await databaseService.getCurrentUser()
+          if (userResult.success && userResult.user) {
+            const mappedUser = {
+              id: userResult.user.id.toString(),
+              email: userResult.user.email || '',
+              name: userResult.user.name || 'User',
+              subscription: {
+                plan: (userResult.user.subscription_plan || 'free') as 'free' | 'premium' | 'yearly' | 'family',
+                expiresAt: userResult.user.subscription_expires_at || null,
+                isActive: userResult.user.subscription_is_active !== false,
+              },
+              createdAt: userResult.user.created_at || new Date().toISOString(),
+            }
+            localStorage.setItem('cloakvpn_user', JSON.stringify(mappedUser))
+            localStorage.removeItem('cloakvpn_app_auth')
+            
+            // Показываем сообщение об успехе
+            setInfo('✅ Авторизация успешна! Обновляю приложение...')
+            setIsLoading(true)
+            
+            // Ждем немного, чтобы пользователь увидел сообщение
+            setTimeout(() => {
+              // Автоматическое обновление страницы после авторизации
+              window.location.reload()
+            }, 800)
+            return
+          }
+        }
+      } else {
+        setError(result.error || 'Неверный код или код устарел. Убедитесь, что вы ввели код из бота и авторизовались в течение последних 10 минут.')
+        setIsLoading(false)
+      }
+    } catch (e: any) {
+      console.error('Error checking auth:', e)
+      setError(e.message || 'Ошибка проверки авторизации')
+      setIsLoading(false)
+    }
+  }
+
   const handleTelegramAuth = async () => {
     setIsLoading(true)
     setError('')
@@ -366,9 +443,25 @@ const TelegramAuth = () => {
             <input
               type="text"
               value={authCodeInput}
-              onChange={(e) => setAuthCodeInput(e.target.value.replace(/\D/g, '').slice(0, 6))}
+              onChange={(e) => {
+                const newValue = e.target.value.replace(/\D/g, '').slice(0, 6)
+                setAuthCodeInput(newValue)
+                // Автоматически проверяем код, когда введено 6 цифр
+                if (newValue.length === 6 && !isLoading) {
+                  // Небольшая задержка перед автоматической проверкой
+                  setTimeout(() => {
+                    handleCheckCode(newValue)
+                  }, 300)
+                }
+              }}
+              onKeyPress={(e) => {
+                if (e.key === 'Enter' && authCodeInput.length === 6 && !isLoading) {
+                  handleCheckCode(authCodeInput)
+                }
+              }}
               placeholder="123456"
               maxLength={6}
+              autoFocus
               style={{
                 width: '100%',
                 padding: '10px',
@@ -385,73 +478,7 @@ const TelegramAuth = () => {
             />
             <div style={{ display: 'flex', gap: '10px' }}>
               <button
-                onClick={async () => {
-                  const authCode = authCodeInput.trim()
-                  if (authCode.length !== 6) {
-                    setError('Код должен состоять из 6 цифр')
-                    return
-                  }
-                  
-                  setIsLoading(true)
-                  setError('')
-                  setInfo('Проверяю авторизацию...')
-                  
-                  try {
-                    // Очищаем код от пробелов и лишних символов
-                    const cleanCode = authCode.trim().replace(/\s/g, '')
-                    console.log('Checking auth via API with auth_code:', cleanCode, '(original:', authCode, ')')
-                    const API_URL = import.meta.env.VITE_API_URL || 'https://cloak-vpn.vercel.app'
-                    const response = await fetch(`${API_URL}/api/telegram/check-auth`, {
-                      method: 'POST',
-                      headers: {
-                        'Content-Type': 'application/json',
-                      },
-                      body: JSON.stringify({
-                        auth_code: cleanCode,
-                      }),
-                    })
-                    
-                    const result = await response.json()
-                    console.log('API check result:', result)
-                    
-                    if (result.success && result.authenticated && result.session?.access_token) {
-                      const { supabase } = await import('../lib/supabase')
-                      const { data, error } = await supabase.auth.setSession({
-                        access_token: result.session.access_token,
-                        refresh_token: result.session.refresh_token || '',
-                      })
-                      
-                      if (!error && data.user) {
-                        const userResult = await databaseService.getCurrentUser()
-                        if (userResult.success && userResult.user) {
-                          const mappedUser = {
-                            id: userResult.user.id.toString(),
-                            email: userResult.user.email || '',
-                            name: userResult.user.name || 'User',
-                            subscription: {
-                              plan: (userResult.user.subscription_plan || 'free') as 'free' | 'premium' | 'yearly' | 'family',
-                              expiresAt: userResult.user.subscription_expires_at || null,
-                              isActive: userResult.user.subscription_is_active !== false,
-                            },
-                            createdAt: userResult.user.created_at || new Date().toISOString(),
-                          }
-                          localStorage.setItem('cloakvpn_user', JSON.stringify(mappedUser))
-                          localStorage.removeItem('cloakvpn_app_auth')
-                          // Автоматическое обновление страницы после авторизации
-                          window.location.reload()
-                          return
-                        }
-                      }
-                    } else {
-                      setError(result.error || 'Неверный код или код устарел. Убедитесь, что вы ввели код из бота и авторизовались в течение последних 10 минут.')
-                    }
-                  } catch (e: any) {
-                    console.error('Error checking auth:', e)
-                    setError(e.message || 'Ошибка проверки авторизации')
-                  } finally {
-                    setIsLoading(false)
-                  }
-                }}
+                onClick={() => handleCheckCode(authCodeInput)}
                 disabled={isLoading || authCodeInput.length !== 6}
                 className="telegram-button"
                 style={{ flex: 1, background: '#4CAF50' }}
@@ -572,7 +599,15 @@ const TelegramAuth = () => {
                         }
                         localStorage.setItem('cloakvpn_user', JSON.stringify(mappedUser))
                         localStorage.removeItem('cloakvpn_app_auth')
-                        window.location.href = '/'
+                        
+                        // Показываем сообщение об успехе
+                        setInfo('✅ Авторизация успешна! Обновляю приложение...')
+                        setIsLoading(true)
+                        
+                        // Ждем немного и перезагружаем страницу
+                        setTimeout(() => {
+                          window.location.reload()
+                        }, 800)
                         return
                       }
                     }
