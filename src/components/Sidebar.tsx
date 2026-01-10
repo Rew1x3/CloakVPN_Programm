@@ -1,11 +1,23 @@
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import './Sidebar.css'
 import logoImage from '../img/logo.jpg'
 
 const Sidebar = () => {
   const location = useLocation()
-  const { user } = useAuth()
+  const navigate = useNavigate()
+  const { user, logout } = useAuth()
+
+  const handleLogout = async () => {
+    try {
+      await logout()
+      navigate('/telegram')
+    } catch (error) {
+      console.error('Logout error:', error)
+      // Все равно редиректим на страницу авторизации
+      navigate('/telegram')
+    }
+  }
 
   const navItems = [
     { path: '/', label: 'Подключение' },
@@ -41,6 +53,10 @@ const Sidebar = () => {
             <div className="user-name">{user.name}</div>
             <div className="user-plan">{user.subscription.plan === 'free' ? 'Бесплатный' : 'Премиум'}</div>
           </div>
+          <button onClick={handleLogout} className="logout-button">
+            <span>🚪</span>
+            <span>Выйти</span>
+          </button>
         </div>
       )}
     </aside>
